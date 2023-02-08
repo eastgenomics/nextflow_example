@@ -16,7 +16,27 @@ process preprocessIntervals {
     path pre_intervals
   script:
     """
-    echo '$x world!'
+    sed -i 's/^chr//' bed
+    sort -k1V -k2n -k3n bed > capture_targets.bed
+    echo 'Done preprocess'
+    """
+}
+
+process addAnnotations {
+  input:
+    path map
+    path segdup
+  output:
+    path map_bed
+    path segdup_bed
+  script:
+    """
+    sed -i 's/^chr//' map
+    sort -k1V -k2n -k3n map > mappability_merged.bed
+    sed -i 's/^chr//' segdup
+    sort -k1V -k2n -k3n segdup > segmental_duplication.bed
+    gatk IndexFeatureFile -I mappability_merged.bed
+    gatk IndexFeatureFile -I segmental_duplication.bed
     """
 }
 
@@ -30,11 +50,13 @@ process annotateIntervals {
     path anno_intervals
   script:
     """
-    echo '$x world!'
+    echo 'Done annotate'
     """
 }
 
 
 workflow {
-  Channel.of('Bonjour', 'Ciao', 'Hello', 'Hola') | sayHello | view
+  // Channel.fromPath(params.map, checkIfExists:true)
+  // Channel.fromPath(params.segdup, checkIfExists:true)
+  preprocessIntervals | annotateIntervals
 }
